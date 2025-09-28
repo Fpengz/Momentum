@@ -1,0 +1,18 @@
+[project]
+name = "yirui-capital-assessment"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "matplotlib>=3.10.6",
+    "notebook>=7.4.6",
+    "pandas>=2.3.2",
+    "pyyaml>=6.0.3",
+    "sqlalchemy>=2.0.43",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.30.1",
+]

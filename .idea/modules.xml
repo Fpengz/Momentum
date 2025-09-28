@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/Yirui Capital Assessment.iml" filepath="$PROJECT_DIR$/.idea/Yirui Capital Assessment.iml" />
+      <module fileurl="file://$PROJECT_DIR$/notebook/.idea/notebook.iml" filepath="$PROJECT_DIR$/notebook/.idea/notebook.iml" />
+    </modules>
+  </component>
+</project>
