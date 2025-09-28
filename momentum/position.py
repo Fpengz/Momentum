@@ -40,7 +40,6 @@ def deltaneutral(data: pd.DataFrame,
     w = w.mul(scale, axis=0).fillna(0.0)
 
     # Apply holding period smoothing
-    if hold_period > 1:
-        w = w.rolling(hold_period).mean()
+    w = w.rolling(hold_period, min_periods=1).mean().fillna(0.0)
 
     return w

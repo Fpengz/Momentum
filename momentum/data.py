@@ -43,7 +43,7 @@ def load_data_df_from_sql(
     bind_syms: Mapping[str, str] = {f"sym{i}": s for i, s in enumerate(instruments)}
     params: Mapping[str, object] = {"start": start_date, **bind_syms}
     sql = text(f"""
-        SELECT *
+        SELECT *, (ClosePrice * factor_multiply) as adjclose
         FROM {table}
         WHERE TradingDay >= :start
             AND Instrument IN ({in_binds})
@@ -57,8 +57,5 @@ def load_data_df_from_sql(
         raise RuntimeError(
             f"No rows returned. Check table='{table}', date>={start_date}, and instruments list."
         )
-    # Calculate the Adjusted Close Price
-    df["adjclose"] = df["ClosePrice"] * df["factor_multiply"]
-
 
     return df.pivot(index="TradingDay", columns="Instrument")

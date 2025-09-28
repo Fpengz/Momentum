@@ -1,7 +1,4 @@
-import numpy as np
-
-
-def cal_perf(bkt_result, periods_per_year=252):
+def cal_perf(bkt_result):
     """
     Compute performance metrics for the backtest.
 
@@ -24,7 +21,7 @@ def cal_perf(bkt_result, periods_per_year=252):
     if volatility == 0:
         sharpe = 0.0
     else:
-        annualization_factor = np.sqrt(periods_per_year)
+        annualization_factor = np.sqrt(252)
         sharpe = annualization_factor * daily_pnl.mean() / volatility
 
     # POT = sum(PnL) / sum(Turnover) * 10000

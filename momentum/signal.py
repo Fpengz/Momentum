@@ -42,5 +42,11 @@ def logreturns(data: pd.DataFrame, dict_parameter: dict) -> pd.DataFrame:
     logp = np.log(px)
     signal = logp.shift(s) - logp.shift(lookback + s)
 
-    return signal
+    clip = dict_parameter.get("clip")
+    if clip is not None:
+        clip = float(clip)
+        if clip <= 0:
+            raise ValueError("'clip' must be positive if provided")
+        signal = signal.clip(lower=-clip, upper=clip)
 
+    return signal
