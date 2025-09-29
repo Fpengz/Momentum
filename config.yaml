@@ -5,7 +5,6 @@ data:
   table: "AdjustedFuturesDaily"
 factor:
   window: 15
-  clip: 3.0
 trade:
   trade_percent: 0.2
   gross_target: 1.0

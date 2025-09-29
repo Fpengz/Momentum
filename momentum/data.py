@@ -1,15 +1,18 @@
 from __future__ import annotations
 
-from pathlib import Path
+from os import PathLike
 from collections.abc import Mapping
+from pathlib import Path
+
 import pandas as pd
 from sqlalchemy import create_engine, text
 
 
 def load_data_df_from_sql(
         instruments: list[str],
+        db_path: str | PathLike,
         start_date: int,
-        db_path: str | Path,
+        end_date: int | None = None,
         table: str = "AdjustedFuturesDaily",
 ) -> pd.DataFrame:
     """
@@ -17,6 +20,7 @@ def load_data_df_from_sql(
 
     Parameters
     ----------
+    end_date
     instruments : list[str]
         Non-empty list of instrument codes (e.g., ['rb','hc',...]).
     start_date : int
@@ -41,14 +45,24 @@ def load_data_df_from_sql(
 
     in_binds = ", ".join([f":sym{i}" for i in range(len(instruments))])
     bind_syms: Mapping[str, str] = {f"sym{i}": s for i, s in enumerate(instruments)}
-    params: Mapping[str, object] = {"start": start_date, **bind_syms}
+    params: Mapping[str, object] = {**bind_syms}
+
     sql = text(f"""
         SELECT *, (ClosePrice * factor_multiply) as adjclose
         FROM {table}
-        WHERE TradingDay >= :start
+        WHERE TradingDay >= {start_date}
             AND Instrument IN ({in_binds})
             AND method = 'OpenInterest'
     """)
+
+    if end_date:
+        sql = text(f"""
+            SELECT *, (ClosePrice * factor_multiply) as adjclose
+            FROM {table}
+            WHERE TradingDay Between {start_date} and {end_date}
+                AND Instrument IN ({in_binds})
+                AND method = 'OpenInterest'
+        """)
 
     with engine.begin() as conn:
         df = pd.read_sql(sql, conn, params=params)

@@ -20,9 +20,10 @@ def cal_bkt(data, position):
         'turnover' : pd.Series, daily sum of abs(position changes)
         'gross_exposure' : pd.Series, daily sum of abs(positions)
     """
-    price_diff = data.diff(periods=1)
+    returns = data.pct_change().fillna(0)
     pos_shift = position.shift(1).fillna(0)
-    pnl = pos_shift * price_diff
+
+    pnl = pos_shift * returns
     pnl_ptf = pnl.sum(axis=1)
     turnover = (position - pos_shift).abs().sum(axis=1)
     gross_exposure = position.abs().sum(axis=1)

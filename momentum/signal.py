@@ -1,48 +1,83 @@
 from __future__ import annotations
+
+from typing import Literal
+
 import numpy as np
 import pandas as pd
 
 
-def logreturns(data: pd.DataFrame, dict_parameter: dict) -> pd.DataFrame:
+def logreturns(
+    data: pd.DataFrame,
+    dict_parameter: dict,
+    mode: Literal["simple", "linear", "exponential"] = "simple"
+) -> pd.DataFrame:
     """
-    Time-series momentum signal per instrument.
+    Flexible momentum signal generator per instrument.
 
-    For date t, lookback L and skip s (default 1 day to avoid look-ahead):
-        signal[t] = ln(P_{t-s}) - ln(P_{t-L-s}) = ln(P_{t-1} / P_{t-L-1})
+    Supports:
+        - unweighted log-return
+        - linear-decay weighted log-return
+        - exponential-decay weighted log-return
 
     Parameters
     ----------
+    mode : Literal["simple", "linear", "exponential"]
     data : pd.DataFrame
-        Must contain data['price'] as a wide DataFrame:
-        index = dates (ascending), columns = instruments, values > 0.
+        Price DataFrame (dates × instruments), all > 0
     dict_parameter : dict
-        Required: 'window' (int, lookback L).
+        Required:
+            'window' (int): lookback period L
         Optional:
-          - 'skip' (int, default 1)
-          - 'clip' (float, winsorize symmetric bounds, optional)
+            'skip' (int, default=1): how many days to skip to avoid lookahead
+            'clip' (float, optional): symmetric winsorization bound
+            'mode' (str): 'simple', 'linear', 'ewm'
+            'alpha' (float): decay factor for 'ewm' mode
 
     Returns
     -------
-    pandas.DataFrame
-        Momentum signal, same shape as price. First (L+skip) rows are NaN.
+    pd.DataFrame
+        Momentum signal (dates × instruments), NaN for initial rows
     """
-
     px = data.sort_index()
-    if not np.isfinite(px.to_numpy()).all():
-        # allow NaNs but not inf/-inf; replace non-positive with NaN
-        px = px.where(px > 0)
+    px = px.where(px > 0)  # replace non-positive with NaN
 
-    lookback = int(dict_parameter.get("window"))
+    lookback = dict_parameter.get("window", 5)
     if lookback <= 0:
-        raise ValueError("'window' must be a positive integer")
-    s = int(dict_parameter.get("skip", 1))
-    if s < 0:
+        raise ValueError("'window' must be positive")
+    skip = int(dict_parameter.get("skip", 1))
+    if skip < 0:
         raise ValueError("'skip' must be >= 0")
 
-    logp = np.log(px)
-    signal = logp.shift(s) - logp.shift(lookback + s)
+    clip = dict_parameter.get("clip", None)
 
-    clip = dict_parameter.get("clip")
+    log_p = np.log(px)
+    signal = pd.DataFrame(0.0, index=px.index, columns=px.columns)
+
+    if mode == "simple":
+        # standard past-R log return
+        signal = log_p.shift(skip) - log_p.shift(lookback + skip)
+
+    elif mode == "linear":
+        # linear decay weights
+        log_return = log_p - log_p.shift(1)
+        weights = np.arange(lookback, 0, -1).astype(float)
+        weights /= weights.sum()
+
+        signal = (
+            log_return
+            .rolling(lookback)
+            .apply(lambda x: np.dot(x, weights), raw=True)
+        )
+
+    elif mode == "exponential":
+        alpha = float(dict_parameter.get("alpha", 0.2))
+        log_return = log_p - log_p.shift(1)
+        signal = log_return.ewm(alpha=alpha, adjust=False).mean().shift(skip)
+
+    else:
+        raise ValueError("Unknown mode, choose 'simple', 'linear', or 'exponential'")
+
+    # optional clipping
     if clip is not None:
         clip = float(clip)
         if clip <= 0:
