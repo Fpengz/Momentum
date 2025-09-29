@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from logger import setup_logger
-from research_momentum import pipeline, cal_bkt
+from pipeline import pipeline
 from optimizer import optimize_optuna
 
 
@@ -53,11 +53,11 @@ def main():
     end_date = 20190101
     strategy = "simple"
 
-    n_trials = 50
+    n_trials = 2**12
 
     # === Run baseline pipeline ===
     logger.info("=== Baseline pipeline (exponential) ===")
-    baseline_perf = pipeline(
+    baseline_result = pipeline(
         config_path=config_path,
         instruments=instruments,
         start_date=start_date,
@@ -65,6 +65,7 @@ def main():
         strategy=strategy,
         plot=False  # disable plotting here
     )
+    baseline_perf = baseline_result.get("performance")
     logger.info(f"Baseline performance: Sharpe={baseline_perf['sharpe']:.2f}, "
                 f"AnnRet={baseline_perf['ann_return']:.2%}, "
                 f"Calmar={baseline_perf['calmar']:.2f}")
@@ -91,7 +92,7 @@ def main():
                 f"AnnRet={best_perf.get('ann_return', 0):.2%}, "
                 f"Calmar={best_perf.get('calmar', 0):.2f}")
 
-    # === Run pipeline with best parameters to get full backtest ===
+    # === Run pipeline with the best parameters to get full backtest ===
     trial_params = {
         "factor": {"window": best_params.get("window"),
                    "skip": best_params.get("skip"),
@@ -112,11 +113,10 @@ def main():
         trial_params=trial_params
     )
 
-    # Assuming pipeline returns performance, we recalc backtest for plotting
-    # If your pipeline returns only performance, you may need to run the full pipeline steps here
-    bkt_result = cal_bkt(df["adjclose"], df["position"])
-
-    plot_performance(bkt_result, title="Best Trial Strategy Performance")
+    # Run the strategy with the best hyperparameter for plotting
+    # backtest_result = df.get("bkt_result")
+    # print(backtest_result)
+    # plot_performance(backtest_result, title="Best Trial Strategy Performance")
 
 
 if __name__ == "__main__":

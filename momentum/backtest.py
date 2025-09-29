@@ -1,7 +1,11 @@
-import pandas as pd
-import numpy as np
+from typing import Any
 
-def cal_bkt(data, position):
+import pandas as pd
+from pandas import DataFrame, Series
+
+
+def cal_bkt(data: pd.DataFrame,
+            position: pd.DataFrame) -> dict:
     """
     Vectorized backtest: daily PnL, portfolio PnL, turnover, gross exposure.
 

@@ -1,6 +1,5 @@
 from os import PathLike
 from typing import Literal
-import pandas as pd
 import matplotlib.pyplot as plt
 
 from config_loader import load_config_yaml
@@ -73,4 +72,4 @@ def pipeline(config_path: str | PathLike,
         plt.title("Cumulative PnL")
         plt.show()
 
-    return performance
+    return {"performance": performance, "position": position, "bkt_result": bkt_result}
